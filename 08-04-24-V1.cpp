@@ -1,3 +1,4 @@
+//START
 #pragma region VEXcode Generated Robot Configuration
 // Make sure all required headers are included.
 #include <stdio.h>
@@ -130,3 +131,4 @@ void arm_up(){
 void arm_down(){
   Motor8.spinToPosition(0, degrees);
 }
+//END
