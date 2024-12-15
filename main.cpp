@@ -30,8 +30,8 @@ int main() {
     ramp_motor.spin(forward);
     while (true) {
         // Read joystick axis values
-        int left = -Controller.Axis3.position(); // Forward/Backward
-        int right = -Controller.Axis2.position();    // Turning
+        int left = -Controller.Axis3.position();
+        int right = -Controller.Axis2.position();
         if(Controller.ButtonL2.pressing()){
             ramp_enabled=!ramp_enabled;
             wait(100, msec);
