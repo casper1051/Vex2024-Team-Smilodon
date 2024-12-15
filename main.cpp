@@ -18,7 +18,9 @@ vex::motor left_motor = motor(PORT1, false);
 vex::motor right_motor = motor(PORT4, true);
 vex::motor ramp_motor = motor(PORT10, false);
 bool ramp_enabled=false;
-
+//ima rundomy commit this message here
+//create a new motor using:
+//vex::motor your_motor_name = motor(PORT(number), <reverse>);
 // Main controller
 vex::controller Controller = controller(primary);
 
