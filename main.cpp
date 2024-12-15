@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /*                                                                            */
 /*    Module:       main.cpp                                                  */
-/*    Author:       Team Smiliodon                                            */
+/*    Author:       Team Smilodon                                            */
 /*    Created:      10/20/2024, 2:21:17 PM                                    */
 /*    Description:  Basic Driving (Joystick Only)                             */
 /*                                                                            */
