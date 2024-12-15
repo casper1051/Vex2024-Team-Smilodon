@@ -47,6 +47,6 @@ int main() {
         right_motor.setVelocity(right, percent);
 
         // Allow other tasks to run
-        this_thread::sleep_for(10);
+        this_thread::sleep_for(20);
     }
 }
