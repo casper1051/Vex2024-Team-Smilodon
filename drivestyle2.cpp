@@ -1,65 +1,3 @@
-#pragma region VEXcode Generated Robot Configuration
-// Make sure all required headers are included.
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <math.h>
-#include <string.h>
-
-
-#include "vex.h"
-
-using namespace vex;
-
-// Brain should be defined by default
-brain Brain;
-
-
-// START V5 MACROS
-#define waitUntil(condition)                                                   \
-  do {                                                                         \
-    wait(5, msec);                                                             \
-  } while (!(condition))
-
-#define repeat(iterations)                                                     \
-  for (int iterator = 0; iterator < iterations; iterator++)
-// END V5 MACROS
-
-
-// Robot configuration code.
-
-
-
-// generating and setting random seed
-void initializeRandomSeed(){
-  int systemTime = Brain.Timer.systemHighResolution();
-  double batteryCurrent = Brain.Battery.current();
-  double batteryVoltage = Brain.Battery.voltage(voltageUnits::mV);
-
-  // Combine these values into a single integer
-  int seed = int(batteryVoltage + batteryCurrent * 100) + systemTime;
-
-  // Set the seed
-  srand(seed);
-}
-
-
-
-void vexcodeInit() {
-
-  //Initializing random seed.
-  initializeRandomSeed(); 
-}
-
-
-// Helper to make playing sounds from the V5 in VEXcode easier and
-// keeps the code cleaner by making it clear what is happening.
-void playVexcodeSound(const char *soundName) {
-  printf("VEXPlaySound:%s\n", soundName);
-  wait(5, msec);
-}
-
-#pragma endregion VEXcode Generated Robot Configuration
 /*----------------------------------------------------------------------------*/
 /*                                                                            */
 /*    Module:       main.cpp                                                  */
@@ -73,7 +11,6 @@ void playVexcodeSound(const char *soundName) {
 #include<cmath>
 
 using namespace vex;
-int Infinity = 1000;
 
 // Driving motors
 vex::motor left_motor = motor(PORT1, false);
@@ -100,20 +37,7 @@ void onevent_Controller1ButtonL1_pressed_0() {
 void onevent_Controller1ButtonL2_pressed_0() {
   clamp.set(false);
 }
-void drive_direct(int left_motor_speed, int right_motor_speed, int drive_in_milliseconds) {
-    // Set the velocity for both motors
-    left_motor.setVelocity(-left_motor_speed, percent);
-    right_motor.setVelocity(-right_motor_speed, percent);
 
-    // Spin the motors for the specified duration in milliseconds
-    left_motor.spin(forward);
-    right_motor.spin(forward);
-    vex::task::sleep(drive_in_milliseconds); // Sleep for the given time
-
-    // Stop the motors after the specified duration
-    left_motor.stop();
-    right_motor.stop();
-}
 int main() {
     // Set the default speed to 0 to prevent the motors from spinning indefinitely
     left_motor.setVelocity(0, percent);
@@ -128,30 +52,11 @@ int main() {
     Controller.ButtonL2.pressed(onevent_Controller1ButtonL2_pressed_0);
 
     while (true) {
-        if(Controller.ButtonB.pressing()){
-            vexDelay(1000);
-            drive_direct(100, 100, 3500);
-            drive_direct(100, -100, 10);
-            vexDelay(1000);
-        }
-        if(Controller.ButtonUp.pressing()){
-            while(bar_motor.position(degrees) > -160){
-                bar_motor.setVelocity(-10, percent);
-            }
-        }
-        else{
-            while(bar_motor.position(degrees) < 0){
-                bar_motor.setVelocity(10, percent);
-            }
-        }
-        if(Controller.ButtonLeft.pressing()){
-            bar_motor.resetPosition();
-        }
-        
-        // Read joystick axis values
+        // Setup variables for calculations
         int leftcalc;
         int rightcalc;
 
+        // Make negative numbers stay negative after squaring
         if (-Controller.Axis3.position() >= 0) {
             leftcalc = pow(-Controller.Axis3.position()/10, 2.0);
         } else {
@@ -163,7 +68,8 @@ int main() {
         } else {
             rightcalc = -pow(-Controller.Axis2.position()/10, 2.0);
         }
-        
+
+        // Set variables for easier readability
         int left = leftcalc;
         int right = rightcalc;
 
