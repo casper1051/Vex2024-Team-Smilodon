@@ -136,7 +136,7 @@ int main() {
             Drivetrain.setDriveVelocity(60, percent);
             Drivetrain.driveFor(-15, inches); // Back away from the stake
             clamp_up(); // Get the clamp ready
-            Drivetrain.turnFor(-122, degrees); // Turn to face mogo
+            Drivetrain.turnFor(-124, degrees); // Turn to face mogo
             Drivetrain.driveFor(30, inches); // Get to the mogo
             clamp_down(); // Clamp the mogo
             Drivetrain.turnFor(-249, degrees); // Turn 180
@@ -154,10 +154,10 @@ int main() {
 
             // Next half of auto
             Drivetrain.turnFor(181, degrees); // Turn to face next mogo
-            Drivetrain.driveFor(71, inches); // Get to next mogo
+            Drivetrain.driveFor(73, inches); // Get to next mogo
             clamp_down(); // Clamp the mogo
             Drivetrain.turnFor(-248, degrees); // Turn 180
-            Drivetrain.driveFor(-24, inches); // Get the first ring
+            Drivetrain.driveFor(-22, inches); // Get the first ring
             task::sleep(2000);
             Drivetrain.driveFor(-17, inches); // Get the second ring
             task::sleep(500);
