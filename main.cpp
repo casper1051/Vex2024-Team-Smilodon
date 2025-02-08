@@ -132,6 +132,7 @@ void rotate_right(int deg){
     }
 
     Drivetrain.stop();  
+    Controller.rumble(".");
 }
 
 void rotate_left(int deg) {
@@ -154,6 +155,7 @@ void rotate_left(int deg) {
     }
 
     Drivetrain.stop();  
+    Controller.rumble(".");
 }
 
 int main() {
@@ -175,11 +177,10 @@ int main() {
     Controller.ButtonL1.pressed(onevent_Controller1ButtonL1_pressed_0);
     Controller.ButtonL2.pressed(onevent_Controller1ButtonL2_pressed_0);
 
+    rotate_left(90);
+    Drivetrain.driveFor(10, inches);
+    rotate_right(90);
     while (true) {
-        // Button B: Auto drive sequence
-        if (Controller.ButtonB.pressing()) {
-            rotate_left(90);
-        }
 
         // Creates variables for computational handling
         int leftcalc;
