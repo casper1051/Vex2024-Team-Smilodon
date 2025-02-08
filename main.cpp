@@ -131,13 +131,13 @@ void rotate_left(int deg) {
     Inertia.setHeading(0, degrees);
     Drivetrain.turn(right);
     
-    while (Inertia.heading(degrees) > -deg) { // Rotating right means decreasing heading
+    while (Inertia.heading(degrees) < deg) { // Rotating right means decreasing heading
         // Calculate velocity reduction based on progress
         double progress = fabs(Inertia.heading(degrees)) / (double)deg;
         double velocity = 50 - (progress * 45); // Decreases from 50% to 5%
         velocity = fmax(velocity, 5); // Ensure minimum 5%
 
-        Drivetrain.setTurnVelocity(velocity, percent);
+        Drivetrain.setTurnVelocity(-velocity, percent);
     }
 
     Drivetrain.stop();  
@@ -165,7 +165,7 @@ int main() {
     while (true) {
         // Button B: Auto drive sequence
         if (Controller.ButtonB.pressing()) {
-            rotate_left(90);
+            rotate_left(88);
         }
 
         // Creates variables for computational handling
