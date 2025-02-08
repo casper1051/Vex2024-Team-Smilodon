@@ -118,7 +118,7 @@ void rotate_right(int deg){
         Controller.rumble("..........");
         task::sleep(1000000);
     }
-    deg = deg<2?deg:deg - 2;
+    deg = deg<1?deg:deg - 2;
     Inertia.setHeading(0, degrees);
     Drivetrain.turn(left);
     
@@ -133,13 +133,14 @@ void rotate_right(int deg){
 
     Drivetrain.stop();  
 }
+
 void rotate_left(int deg) {
     if(deg <= 0){
         //I cant use errors so do this instead...
         Controller.rumble("..........");
         task::sleep(1000000);
     }
-    deg = deg<2?deg:deg - 2;
+    deg = deg<1?deg:deg - 2;
     Inertia.setHeading(0, degrees);
     Drivetrain.turn(right);
     
@@ -177,7 +178,7 @@ int main() {
     while (true) {
         // Button B: Auto drive sequence
         if (Controller.ButtonB.pressing()) {
-            rotate_left(88);
+            rotate_left(90);
         }
 
         // Creates variables for computational handling
