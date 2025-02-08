@@ -113,6 +113,12 @@ void clamp_up() {
   clamp.set(true);
 }
 void rotate_right(int deg){
+    if(deg <= 0){
+        //I cant use errors so do this instead...
+        Controller.rumble("..........");
+        task::sleep(1000000);
+    }
+    deg = deg<2?deg:deg - 2;
     Inertia.setHeading(0, degrees);
     Drivetrain.turn(left);
     
@@ -128,6 +134,12 @@ void rotate_right(int deg){
     Drivetrain.stop();  
 }
 void rotate_left(int deg) {
+    if(deg <= 0){
+        //I cant use errors so do this instead...
+        Controller.rumble("..........");
+        task::sleep(1000000);
+    }
+    deg = deg<2?deg:deg - 2;
     Inertia.setHeading(0, degrees);
     Drivetrain.turn(right);
     
