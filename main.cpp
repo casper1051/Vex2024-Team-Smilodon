@@ -1,66 +1,178 @@
+#pragma region VEXcode Generated Robot Configuration
+// Make sure all required headers are included.
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <math.h>
+#include <string.h>
+
+
+#include "vex.h"
+
+using namespace vex;
+
+// Brain should be defined by default
+brain Brain;
+
+
+// START V5 MACROS
+#define waitUntil(condition)                                                   \
+  do {                                                                         \
+    wait(5, msec);                                                             \
+  } while (!(condition))
+
+#define repeat(iterations)                                                     \
+  for (int iterator = 0; iterator < iterations; iterator++)
+// END V5 MACROS
+
+
+// Robot configuration code.
+
+
+
+// generating and setting random seed
+void initializeRandomSeed(){
+  int systemTime = Brain.Timer.systemHighResolution();
+  double batteryCurrent = Brain.Battery.current();
+  double batteryVoltage = Brain.Battery.voltage(voltageUnits::mV);
+
+  // Combine these values into a single integer
+  int seed = int(batteryVoltage + batteryCurrent * 100) + systemTime;
+
+  // Set the seed
+  srand(seed);
+}
+
+
+
+void vexcodeInit() {
+
+  //Initializing random seed.
+  initializeRandomSeed(); 
+}
+
+
+// Helper to make playing sounds from the V5 in VEXcode easier and
+// keeps the code cleaner by making it clear what is happening.
+void playVexcodeSound(const char *soundName) {
+  printf("VEXPlaySound:%s\n", soundName);
+  wait(5, msec);
+}
+
+#pragma endregion VEXcode Generated Robot Configuration
 /*----------------------------------------------------------------------------*/
 /*                                                                            */
 /*    Module:       main.cpp                                                  */
 /*    Author:       Team Smiliodon                                            */
-/*    Created:      10/20/2024, 2:21:17 PM                                    */
-/*    Description:  Basic Driving (Joystick Only)                             */
+/*    Created:      02/04/2025                                                */
+/*    Description:  Basic Driving w/ quadr. power curve and basic skill auto  */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
 #include "vex.h"
-#include <cmath> // Required for std::pow
+#include<cmath>
 
 using namespace vex;
 
-// Global instances and variables
-vex::brain Brain;
-vex::controller Controller = controller(primary);
+// Driving motors
+vex::motor left_motor = motor(PORT1, false);
+vex::motor right_motor = motor(PORT10, true);
+vex::motor left_motor2 = motor(PORT3, false);
+vex::motor right_motor2 = motor(PORT2, true);
+vex::motor ramp_motor = motor(PORT8, false);
+vex::motor second_ramp_motor = motor(PORT9, true);
+vex::inertial Inertia = inertial(PORT4);
+motor_group leftMotors = motor_group(left_motor, left_motor2);
+motor_group rightMotors = motor_group(right_motor, right_motor2);
+motor_group rampMotors = motor_group(ramp_motor, second_ramp_motor);
+smartdrive Drivetrain = smartdrive(leftMotors, rightMotors, Inertia, 259.34, 320, 40, mm, 1.8);
 
-vex::motor left_motor(PORT1, false);
-vex::motor right_motor(PORT10, true);
-vex::motor left_motor2(PORT3, false);
-vex::motor right_motor2(PORT2, true);
-vex::motor ramp_motor(PORT8, false);
-vex::motor second_ramp_motor(PORT9, true);
 
-vex::digital_out clamp(Brain.ThreeWirePort.A);
+// Clamp motor or servo (assuming it's a motor for simplicity)
+vex::digital_out clamp = digital_out(Brain.ThreeWirePort.A);
 
 bool ramp_enabled = false;
 bool is_ramp_spinning = false;
 
-// Function to drive motors directly for a specified duration
-void drive_direct(int left_motor_speed, int right_motor_speed, int duration_ms) {
-    left_motor.spin(forward, -left_motor_speed, percent);
-    right_motor.spin(forward, -right_motor_speed, percent);
-    task::sleep(duration_ms);
-    left_motor.stop();
-    right_motor.stop();
+// Main controller
+vex::controller Controller = controller(primary);
+
+void onevent_Controller1ButtonL1_pressed_0() {
+  clamp.set(false);
 }
-void clamp_down(){
-clamp.set(true);
+
+void onevent_Controller1ButtonL2_pressed_0() {
+  clamp.set(true);
 }
-void clamp_up(){
-clamp.set(false);
+
+void clamp_down() {
+  clamp.set(false);
 }
-// Function to reset all motor velocities
-void reset_motor_velocities() {
+
+void clamp_up() {
+  clamp.set(true);
+}
+void rotate_right(int deg){
+    Inertia.setHeading(0, degrees);
+    Drivetrain.turn(left);
+    
+    while (Inertia.heading(degrees) < deg) {
+        // Calculate velocity reduction based on progress
+        double progress = Inertia.heading(degrees) / (double)deg;
+        double velocity = 50 - (progress * 45); // Decreases from 50% to 5%
+        velocity = fmax(velocity, 5); // Ensure minimum 5%
+
+        Drivetrain.setTurnVelocity(velocity, percent);
+    }
+
+    Drivetrain.stop();  
+}
+void rotate_left(int deg) {
+    Inertia.setHeading(0, degrees);
+    Drivetrain.turn(right);
+    
+    while (Inertia.heading(degrees) > -deg) { // Rotating right means decreasing heading
+        // Calculate velocity reduction based on progress
+        double progress = fabs(Inertia.heading(degrees)) / (double)deg;
+        double velocity = 50 - (progress * 45); // Decreases from 50% to 5%
+        velocity = fmax(velocity, 5); // Ensure minimum 5%
+
+        Drivetrain.setTurnVelocity(velocity, percent);
+    }
+
+    Drivetrain.stop();  
+}
+
+int main() {
+    // Set the default speed to 0 to prevent the motors from spinning indefinitely
     left_motor.setVelocity(0, percent);
     right_motor.setVelocity(0, percent);
     left_motor2.setVelocity(0, percent);
     right_motor2.setVelocity(0, percent);
     ramp_motor.setVelocity(0, percent);
+    Drivetrain.setDriveVelocity(100, percent);
+    Drivetrain.setTurnVelocity(25, percent);
     second_ramp_motor.setVelocity(0, percent);
-}
-
-int main() {
-    reset_motor_velocities();
+    Inertia.calibrate(1);
+    while(Inertia.isCalibrating()){
+        task::sleep(1);
+    }
+    Controller.rumble(".");
+    // Register event handlers for clamp control
+    Controller.ButtonL1.pressed(onevent_Controller1ButtonL1_pressed_0);
+    Controller.ButtonL2.pressed(onevent_Controller1ButtonL2_pressed_0);
 
     while (true) {
-// Setup variables for calculations
+        // Button B: Auto drive sequence
+        if (Controller.ButtonB.pressing()) {
+            rotate_left(90);
+        }
+
+        // Creates variables for computational handling
         int leftcalc;
         int rightcalc;
 
-        // Make negative numbers stay negative after squaring
+        // Because of squaring a number, if statements are used for positive and negative
         if (-Controller.Axis3.position() >= 0) {
             leftcalc = pow(-Controller.Axis3.position()/10, 2.0);
         } else {
@@ -72,101 +184,50 @@ int main() {
         } else {
             rightcalc = -pow(-Controller.Axis2.position()/10, 2.0);
         }
-
-        // Set variables for easier readability
+        
+        // Sets left and right for easier readability
         int left = leftcalc;
         int right = rightcalc;
-
-
-
-        // Button B: Drive sequence
-        if (Controller.ButtonB.pressing()) {
-            motor_group leftMotors = motor_group(left_motor, left_motor2);
-            motor_group rightMotors = motor_group(right_motor, right_motor2);
-            drivetrain Drivetrain = drivetrain(leftMotors, rightMotors, 259.34, 320, 40, mm, 1.8);
-            Drivetrain.setDriveVelocity(50, percent);
-
-            Drivetrain.driveFor(2, inches); //Move to the pointy stick
-
-            //Put preload on pointy stick
-            ramp_motor.spin(forward, 75, percent);
-            second_ramp_motor.spin(forward, 100, percent);
-            task::sleep(5000);
-
-            //Slam the ring wall
-            Drivetrain.setDriveVelocity(100, percent); //full sped
-            Drivetrain.driveFor(-5, inches);
-            Drivetrain.driveFor(5, inches);
-            Drivetrain.setDriveVelocity(50, percent); //normal sped
-
-            //Get off of wall
-            Drivetrain.driveFor(-10, inches);
-
-            //clamp_down();
-            //task::sleep(500);
-
-            //Turn to goal and rings
-            Drivetrain.turnFor(-130, degrees);
-            Drivetrain.driveFor(-36, inches);
-
-            //clamp_up();
-            //Drivetrain.turnFor(10, degrees);
-            //Drivetrain.driveFor(17, inches);
-
-            //clamp_up();
-
-            task::sleep(5000);
-        }
-
-        // Screen feedback
-        Brain.Screen.clearScreen();
-        Brain.Screen.printAt(50, 50, "%d", left_motor.velocity(rpm));
-        
-        // Button A: Toggle ramp motor
-        if (Controller.ButtonA.pressing() && !is_ramp_spinning) {
-            ramp_enabled = !ramp_enabled;
-            is_ramp_spinning = true;
-        } else if (!Controller.ButtonA.pressing()) {
-            is_ramp_spinning = false;
-        }
-
-        // Clamp control
         if(Controller.ButtonDown.pressing()){
             clamp.set(true);
         }
         if(Controller.ButtonUp.pressing()){
             clamp.set(false);
         }
-
-        // Motor velocity adjustments
-        if (Controller.ButtonL1.pressing() || Controller.ButtonL2.pressing()) {
-            left_motor.setVelocity(1, percent);
-            right_motor.setVelocity(1, percent);
-            left_motor2.setVelocity(1, percent);
-            right_motor2.setVelocity(1, percent);
-        } else {
-            left_motor.setVelocity(left, percent);
-            right_motor.setVelocity(right, percent);
-            left_motor2.setVelocity(left, percent);
-            right_motor2.setVelocity(right, percent);
+        // Check for ramp control button press for continuous spinning
+        if (Controller.ButtonA.pressing() && !is_ramp_spinning) {
+            ramp_enabled = !ramp_enabled;
+            is_ramp_spinning = true; // Prevent rapid toggling on hold
+        } else if (!Controller.ButtonA.pressing()) {
+            is_ramp_spinning = false; // Reset the flag when the button is released
         }
 
-        // Ramp motor control
-        if (Controller.ButtonR1.pressing()) {
-            ramp_motor.spin(forward, 100, percent);
-            second_ramp_motor.spin(forward, 100, percent);
+        // Set the velocity of the motors based on joystick input
+        left_motor.setVelocity(left, percent);
+        right_motor.setVelocity(right, percent);
+        right_motor2.setVelocity(right, percent);
+        left_motor2.setVelocity(left, percent);
+
+        // Control the ramp motor
+        if(Controller.ButtonR1.pressing() || Controller.ButtonR2.pressing()){
+            ramp_enabled = false;
+        }
+        if (ramp_enabled || Controller.ButtonR1.pressing()) {
+            ramp_motor.setVelocity(100, percent);
+            ramp_motor.spin(forward);
+            second_ramp_motor.setVelocity(100, percent);
+            second_ramp_motor.spin(forward);
         } else if (Controller.ButtonR2.pressing()) {
-            ramp_motor.spin(reverse, 100, percent);
-            second_ramp_motor.spin(reverse, 100, percent);
-        } else if (ramp_enabled) {
-            ramp_motor.spin(forward, 100, percent);
-            second_ramp_motor.spin(forward, 100, percent);
+            ramp_motor.setVelocity(100, percent);
+            ramp_motor.spin(reverse);
+            second_ramp_motor.setVelocity(100, percent);
+            second_ramp_motor.spin(reverse);
         } else {
             ramp_motor.stop();
             second_ramp_motor.stop();
         }
 
-        // Drive motors
+        // Spin the motors based on the set velocity
         left_motor.spin(forward);
         right_motor.spin(forward);
         left_motor2.spin(forward);
