@@ -59,7 +59,7 @@ void clamp_up() { clamp.set(true); }
 // Rotation functions
 void rotate_right(int deg) {
     if (deg <= 0) return;
-    Inertia.setHeading(0, degrees);
+    Inertia.setHeading(2, degrees);
     Drivetrain.turn(left);
     Drivetrain.setTurnVelocity(12, percent);
     while (true){
