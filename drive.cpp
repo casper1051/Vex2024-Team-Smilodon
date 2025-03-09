@@ -76,21 +76,18 @@ using namespace vex;
 
 // Driving motors
 vex::motor left_motor = motor(PORT1, false);
-vex::motor right_motor = motor(PORT10, true);
-vex::motor left_motor2 = motor(PORT3, false);
-vex::motor right_motor2 = motor(PORT2, true);
-vex::motor ramp_motor = motor(PORT8, false);
-vex::motor second_ramp_motor = motor(PORT9, true);
-vex::motor wall_motor = motor(PORT18, ratio36_1, true);
-vex::motor second_wall_motor = motor(PORT19, ratio36_1, false);
-
-vex::motor_group wallstake(wall_motor, second_wall_motor);
+vex::motor left_motor2 = motor(PORT2, false);
+vex::motor right_motor = motor(PORT9, true);
+vex::motor right_motor2 = motor(PORT10, true);
+vex::motor intake = motor(PORT3, true);
+vex::motor hook = motor(PORT8, ratio6_1, false);
 
 // Clamp motor or servo (assuming it's a motor for simplicity)
 vex::digital_out clamp = digital_out(Brain.ThreeWirePort.A);
 
 bool ramp_enabled = false;
 bool is_ramp_spinning = false;
+bool ready = false;
 
 // Main controller
 vex::controller Controller = controller(primary);
@@ -111,27 +108,15 @@ void clamp_up() {
   clamp.set(true);
 }
 
-void wall_reset() {
-  wallstake.spinToPosition(0, degrees);
-}
-
-void wall_ready() {
-  wallstake.spinToPosition(55, degrees);
-}
-
-void wall_score() {
-  wallstake.spinToPosition(190, degrees);
-}
-
 int main() {
   while (true) {
     // Set the default speed to 0 to prevent the motors from spinning indefinitely
-      left_motor.setVelocity(0, percent);
-      right_motor.setVelocity(0, percent);
-      left_motor2.setVelocity(0, percent);
-      right_motor2.setVelocity(0, percent);
-      ramp_motor.setVelocity(0, percent);
-      second_ramp_motor.setVelocity(0, percent);
+    left_motor.setVelocity(0, percent);
+    left_motor2.setVelocity(0, percent);
+    right_motor.setVelocity(0, percent);
+    right_motor2.setVelocity(0, percent);
+    hook.setVelocity(0, percent);
+    intake.setVelocity(0, percent);
 
     // Creates variables for computational handling
     int leftcalc;
@@ -139,7 +124,7 @@ int main() {
 
     // Because of squaring a number, if statements are used for positive and negative
     if (-Controller.Axis3.position() >= 0) {
-        leftcalc = pow(-Controller.Axis3.position()/10, 2.0);
+      leftcalc = pow(-Controller.Axis3.position()/10, 2.0);
     } else {
       leftcalc = -pow(-Controller.Axis3.position()/10, 2.0);
     }
@@ -164,9 +149,9 @@ int main() {
 
     // Set the velocity of the motors based on joystick input
     left_motor.setVelocity(left, percent);
+    left_motor2.setVelocity(left, percent);
     right_motor.setVelocity(right, percent);
     right_motor2.setVelocity(right, percent);
-    left_motor2.setVelocity(left, percent);
 
     // Control the ramp motor
     if(Controller.ButtonR1.pressing() || Controller.ButtonR2.pressing()){
@@ -174,37 +159,25 @@ int main() {
     }
 
     if (ramp_enabled || Controller.ButtonR1.pressing()) {
-      ramp_motor.setVelocity(100, percent);
-      ramp_motor.spin(forward);
-      second_ramp_motor.setVelocity(100, percent);
-      second_ramp_motor.spin(forward);
+      intake.setVelocity(100, percent);
+      intake.spin(forward);
+      hook.setVelocity(100, percent);
+      hook.spin(forward);
     } else if (Controller.ButtonR2.pressing()) {
-      ramp_motor.setVelocity(100, percent);
-      ramp_motor.spin(reverse);
-      second_ramp_motor.setVelocity(100, percent);
-      second_ramp_motor.spin(reverse);
+      intake.setVelocity(100, percent);
+      intake.spin(reverse);
+      hook.setVelocity(100, percent);
+      hook.spin(reverse);
     } else {
-      ramp_motor.stop();
-      second_ramp_motor.stop();
+      intake.stop();
+      hook.stop();
     }
 
     // Spin the motors based on the set velocity
     left_motor.spin(forward);
-    right_motor.spin(forward);
     left_motor2.spin(forward);
+    right_motor.spin(forward);
     right_motor2.spin(forward);
-
-    if (Controller.ButtonDown.pressing()) {
-        wall_reset();
-    }
-
-    if (Controller.ButtonB.pressing()) {
-        wall_ready();
-    }
-
-    if (Controller.ButtonUp.pressing()) {
-        wall_score();
-    }
 
     // Register event handlers for clamp control
       Controller.ButtonL1.pressed(onevent_Controller1ButtonL1_pressed_0);
