@@ -81,6 +81,9 @@ vex::motor right_motor = motor(PORT9, true);
 vex::motor right_motor2 = motor(PORT10, true);
 vex::motor intake = motor(PORT3, true);
 vex::motor hook = motor(PORT8, ratio6_1, false);
+vex::motor wallstake1 = motor(PORT5, ratio36_1, true);
+vex::motor wallstake2 = motor(PORT6, ratio36_1, false);
+vex::motor_group wallstake (wallstake1, wallstake2);
 
 // Clamp motor or servo (assuming it's a motor for simplicity)
 vex::digital_out clamp = digital_out(Brain.ThreeWirePort.A);
@@ -92,20 +95,22 @@ bool ready = false;
 // Main controller
 vex::controller Controller = controller(primary);
 
-void onevent_Controller1ButtonL1_pressed_0() {
-  clamp.set(false);
-}
-
-void onevent_Controller1ButtonL2_pressed_0() {
-  clamp.set(true);
-}
-
 void clamp_down() {
   clamp.set(false);
 }
 
 void clamp_up() {
   clamp.set(true);
+}
+
+void wallstake_ready() {
+  wallstake.setVelocity(30, percent);
+  wallstake.spinToPosition(32, degrees);
+}
+
+void wallstake_score() {
+  wallstake.setVelocity(50, percent);
+  wallstake.spinToPosition(120, degrees);
 }
 
 int main() {
@@ -117,6 +122,7 @@ int main() {
     right_motor2.setVelocity(0, percent);
     hook.setVelocity(0, percent);
     intake.setVelocity(0, percent);
+    wallstake.setStopping(hold);
 
     // Creates variables for computational handling
     int leftcalc;
@@ -173,15 +179,36 @@ int main() {
       hook.stop();
     }
 
+    if (Controller.ButtonL1.pressing()) {
+      clamp_down();
+    }
+
+    if (Controller.ButtonL2.pressing()) {
+      clamp_up();
+    }
+
+    if (Controller.ButtonB.pressing()) {
+      wallstake_ready();
+    }
+
+    if (Controller.ButtonY.pressing()) {
+      wallstake_score();
+    }
+
+    if (Controller.ButtonUp.pressing()) {
+      wallstake.setVelocity(40, percent);
+      wallstake.spin(forward);
+    } else if (Controller.ButtonDown.pressing()) {
+      wallstake.setVelocity(-40, percent);
+      wallstake.spin(forward);
+    } else {
+      wallstake.stop();
+    }
     // Spin the motors based on the set velocity
     left_motor.spin(forward);
     left_motor2.spin(forward);
     right_motor.spin(forward);
     right_motor2.spin(forward);
-
-    // Register event handlers for clamp control
-      Controller.ButtonL1.pressed(onevent_Controller1ButtonL1_pressed_0);
-      Controller.ButtonL2.pressed(onevent_Controller1ButtonL2_pressed_0);  
 
     // Allow other tasks to run
     this_thread::sleep_for(20);
