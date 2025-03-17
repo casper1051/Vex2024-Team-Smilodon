@@ -62,10 +62,11 @@ void playVexcodeSound(const char *soundName) {
 #pragma endregion VEXcode Generated Robot Configuration
 /*----------------------------------------------------------------------------*/
 /*                                                                            */
-/*    Module:       main.cpp                                                  */
+/*    Module:       drive.cpp                                                 */
 /*    Author:       Team Smiliodon                                            */
 /*    Created:      02/14/2025                                                */
-/*    Description:  Basic Driving w/ quadr. power curve                       */
+/*    Description:  Basic Driving w/ quadr. power curve, clamp, doinker, and  */
+/*                  wallstake capabilities.                                   */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
@@ -84,15 +85,13 @@ vex::motor hook = motor(PORT8, ratio6_1, false);
 vex::motor wallstake1 = motor(PORT5, ratio36_1, true);
 vex::motor wallstake2 = motor(PORT6, ratio36_1, false);
 vex::motor_group wallstake (wallstake1, wallstake2);
-
-// Clamp motor or servo (assuming it's a motor for simplicity)
 vex::digital_out clamp = digital_out(Brain.ThreeWirePort.A);
+vex::digital_out doinker = digital_out(Brain.ThreeWirePort.B);
 
 bool ramp_enabled = false;
 bool is_ramp_spinning = false;
 bool ready = false;
 
-// Main controller
 vex::controller Controller = controller(primary);
 
 void clamp_down() {
@@ -101,6 +100,14 @@ void clamp_down() {
 
 void clamp_up() {
   clamp.set(true);
+}
+
+void doinker_up() {
+  clamp.set(true);
+}
+
+void doinker_down() {
+  clamp.set(false);
 }
 
 void wallstake_ready() {
@@ -115,7 +122,6 @@ void wallstake_score() {
 
 int main() {
   while (true) {
-    // Set the default speed to 0 to prevent the motors from spinning indefinitely
     left_motor.setVelocity(0, percent);
     left_motor2.setVelocity(0, percent);
     right_motor.setVelocity(0, percent);
@@ -124,11 +130,9 @@ int main() {
     intake.setVelocity(0, percent);
     wallstake.setStopping(hold);
 
-    // Creates variables for computational handling
     int leftcalc;
     int rightcalc;
 
-    // Because of squaring a number, if statements are used for positive and negative
     if (-Controller.Axis3.position() >= 0) {
       leftcalc = pow(-Controller.Axis3.position()/10, 2.0);
     } else {
@@ -141,25 +145,21 @@ int main() {
       rightcalc = -pow(-Controller.Axis2.position()/10, 2.0);
     }
           
-    // Sets left and right for easier readability
     int left = leftcalc;
     int right = rightcalc;
 
-    // Check for ramp control button press for continuous spinning
     if (Controller.ButtonA.pressing() && !is_ramp_spinning) {
         ramp_enabled = !ramp_enabled;
-        is_ramp_spinning = true; // Prevent rapid toggling on hold
+        is_ramp_spinning = true;
     } else if (!Controller.ButtonA.pressing()) {
-        is_ramp_spinning = false; // Reset the flag when the button is released
+        is_ramp_spinning = false;
     }
 
-    // Set the velocity of the motors based on joystick input
     left_motor.setVelocity(left, percent);
     left_motor2.setVelocity(left, percent);
     right_motor.setVelocity(right, percent);
     right_motor2.setVelocity(right, percent);
 
-    // Control the ramp motor
     if(Controller.ButtonR1.pressing() || Controller.ButtonR2.pressing()){
         ramp_enabled = false;
     }
@@ -187,6 +187,14 @@ int main() {
       clamp_up();
     }
 
+    if (Controller.ButtonLeft.pressing()) {
+      doinker_down();
+    }
+
+    if (Controller.ButtonRight.pressing()) {
+      doinker_up();
+    }
+
     if (Controller.ButtonB.pressing()) {
       wallstake_ready();
     }
@@ -204,13 +212,11 @@ int main() {
     } else {
       wallstake.stop();
     }
-    // Spin the motors based on the set velocity
     left_motor.spin(forward);
     left_motor2.spin(forward);
     right_motor.spin(forward);
     right_motor2.spin(forward);
 
-    // Allow other tasks to run
     this_thread::sleep_for(20);
   }
 }
