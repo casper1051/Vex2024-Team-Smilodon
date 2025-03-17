@@ -62,7 +62,7 @@ void playVexcodeSound(const char *soundName) {
 #pragma endregion VEXcode Generated Robot Configuration
 /*----------------------------------------------------------------------------*/
 /*                                                                            */
-/*    Module:       main.cpp                                                  */
+/*    Module:       skills.cpp                                                */
 /*    Author:       Team Smiliodon                                            */
 /*    Created:      02/04/2025                                                */
 /*    Description:  Basic Driving w/ quadr. power curve and basic skill auto  */
@@ -76,13 +76,14 @@ using namespace vex;
 
 // Driving motors
 vex::motor left_motor = motor(PORT1, false);
-vex::motor right_motor = motor(PORT10, true);
-vex::motor left_motor2 = motor(PORT3, false);
-vex::motor right_motor2 = motor(PORT2, true);
-vex::motor ramp_motor = motor(PORT8, false);
-vex::motor second_ramp_motor = motor(PORT9, true);
-vex::motor arm = motor(PORT18, ratio36_1, false);
-vex::motor lifter = motor(PORT19, ratio36_1, false);
+vex::motor left_motor2 = motor(PORT2, false);
+vex::motor right_motor = motor(PORT9, true);
+vex::motor right_motor2 = motor(PORT10, true);
+vex::motor intake = motor(PORT3, true);
+vex::motor hook = motor(PORT8, ratio6_1, false);
+vex::motor wallstake1 = motor(PORT5, ratio36_1, true);
+vex::motor wallstake2 = motor(PORT6, ratio36_1, false);
+vex::motor_group wallstake (wallstake1, wallstake2);
 inertial Inertia(PORT4);
 
 motor_group leftMotors = motor_group(left_motor, left_motor2);
@@ -92,7 +93,7 @@ drivetrain Drivetrain(leftMotors, rightMotors, 259.34, 320, 40, mm, 1.8);
 
 // Clamp motor or servo (assuming it's a motor for simplicity)
 vex::digital_out clamp = digital_out(Brain.ThreeWirePort.A);
-vex::digital_out grabber = digital_out(Brain.ThreeWirePort.B);
+vex::digital_out doinker = digital_out(Brain.ThreeWirePort.B);
 
 bool ramp_enabled = false;
 bool is_ramp_spinning = false;
@@ -105,6 +106,16 @@ void onevent_Controller1ButtonL1_pressed_0() {
   clamp.set(false);
 }
 
+void wallstake_ready() {
+  wallstake.setVelocity(30, percent);
+  wallstake.spinToPosition(32, degrees);
+}
+
+void wallstake_score() {
+  wallstake.setVelocity(50, percent);
+  wallstake.spinToPosition(120, degrees);
+}
+
 void onevent_Controller1ButtonL2_pressed_0() {
   clamp.set(true);
 }
@@ -115,6 +126,14 @@ void clamp_down() {
 
 void clamp_up() {
   clamp.set(true);
+}
+
+void doinker_up() {
+  clamp.set(true);
+}
+
+void doinker_down() {
+  clamp.set(false);
 }
 
 void wall_reset() {
@@ -314,7 +333,24 @@ void driver_skills(){
     if (Controller.ButtonUp.pressing()) {
       wall_score();
     }
+    
+    if (Controller.ButtonB.pressing()) {
+      wallstake_ready();
+    }
 
+    if (Controller.ButtonY.pressing()) {
+      wallstake_score();
+    }
+
+    if (Controller.ButtonUp.pressing()) {
+      wallstake.setVelocity(40, percent);
+      wallstake.spin(forward);
+    } else if (Controller.ButtonDown.pressing()) {
+      wallstake.setVelocity(-40, percent);
+      wallstake.spin(forward);
+    } else {
+      wallstake.stop();
+    }
     // Spin the motors based on the set velocity
     left_motor.spin(forward);
     right_motor.spin(forward);
