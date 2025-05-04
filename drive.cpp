@@ -84,13 +84,18 @@ vex::motor intake = motor(PORT3, true);
 vex::motor hook = motor(PORT8, ratio6_1, false);
 vex::motor wallstake1 = motor(PORT5, ratio36_1, true);
 vex::motor wallstake2 = motor(PORT6, ratio36_1, false);
+vex::optical sensor = optical(PORT4);
 vex::motor_group wallstake (wallstake1, wallstake2);
 vex::digital_out clamp = digital_out(Brain.ThreeWirePort.A);
 vex::digital_out doinker = digital_out(Brain.ThreeWirePort.B);
+vex::digital_out lifter = digital_out(Brain.ThreeWirePort.C);
 
 bool ramp_enabled = false;
-bool is_ramp_spinning = false;
-bool ready = false;
+bool doink = false;
+bool toggleteam = false;
+bool isred = true;
+bool wrong = false;
+int buffer = 0;
 
 vex::controller Controller = controller(primary);
 
@@ -102,12 +107,12 @@ void clamp_up() {
   clamp.set(true);
 }
 
-void doinker_up() {
-  clamp.set(true);
+void lifter_down() {
+  lifter.set(false);
 }
 
-void doinker_down() {
-  clamp.set(false);
+void lifter_up() {
+  lifter.set(true);
 }
 
 void wallstake_ready() {
@@ -130,30 +135,12 @@ int main() {
     intake.setVelocity(0, percent);
     wallstake.setStopping(hold);
 
-    int leftcalc;
-    int rightcalc;
-
-    if (-Controller.Axis3.position() >= 0) {
-      leftcalc = pow(-Controller.Axis3.position()/10, 2.0);
-    } else {
-      leftcalc = -pow(-Controller.Axis3.position()/10, 2.0);
-    }
-
-    if (-Controller.Axis2.position() >= 0) {
-      rightcalc = pow(-Controller.Axis2.position()/10, 2.0);
-    } else {
-      rightcalc = -pow(-Controller.Axis2.position()/10, 2.0);
-    }
+    sensor.gestureDisable();
+    sensor.setLight(ledState::on);
+    sensor.brightness(10);
           
-    int left = leftcalc;
-    int right = rightcalc;
-
-    if (Controller.ButtonA.pressing() && !is_ramp_spinning) {
-        ramp_enabled = !ramp_enabled;
-        is_ramp_spinning = true;
-    } else if (!Controller.ButtonA.pressing()) {
-        is_ramp_spinning = false;
-    }
+    int left = -Controller.Axis3.position();
+    int right = -Controller.Axis2.position();
 
     left_motor.setVelocity(left, percent);
     left_motor2.setVelocity(left, percent);
@@ -161,14 +148,47 @@ int main() {
     right_motor2.setVelocity(right, percent);
 
     if(Controller.ButtonR1.pressing() || Controller.ButtonR2.pressing()){
-        ramp_enabled = false;
+      ramp_enabled = false;
+    }
+
+    if (Controller.ButtonRight.pressing() && !doink) {
+      doinker = !doinker;
+      doink = true;
+    } else if (!Controller.ButtonRight.pressing()) {
+      doink = false;
+    }
+
+    if (Controller.ButtonLeft.pressing() && !toggleteam) {
+      isred = !isred;
+      toggleteam = true;
+    } else if (!Controller.ButtonRight.pressing()) {
+      toggleteam = false;
+    }
+
+    if (180 < sensor.hue() && sensor.hue() < 220) {
+      wrong = true;
+    }
+
+    if (wrong) {
+      buffer += 1;
+      if (buffer > 40) {
+        wrong = false;
+        buffer = 0;
+      }
     }
 
     if (ramp_enabled || Controller.ButtonR1.pressing()) {
+      if (buffer > 10 && wrong) {
+        intake.setVelocity(100, percent);
+        intake.spin(forward);
+        hook.setVelocity(100, percent);
+        hook.spin(reverse);
+      } else {
       intake.setVelocity(100, percent);
       intake.spin(forward);
       hook.setVelocity(100, percent);
       hook.spin(forward);
+      }
     } else if (Controller.ButtonR2.pressing()) {
       intake.setVelocity(100, percent);
       intake.spin(reverse);
@@ -187,12 +207,12 @@ int main() {
       clamp_up();
     }
 
-    if (Controller.ButtonLeft.pressing()) {
-      doinker_down();
+    if (Controller.ButtonA.pressing()) {
+      lifter_down();
     }
 
-    if (Controller.ButtonRight.pressing()) {
-      doinker_up();
+    if (Controller.ButtonX.pressing()) {
+      lifter_up();
     }
 
     if (Controller.ButtonB.pressing()) {
@@ -217,6 +237,6 @@ int main() {
     right_motor.spin(forward);
     right_motor2.spin(forward);
 
-    this_thread::sleep_for(20);
+    this_thread::sleep_for(10);
   }
 }
